@@ -1,0 +1,4 @@
+# lintian misdetects GPL license in copyright file.
+opensmtpd: copyright-should-refer-to-common-license-file-for-gpl
+# OpenSMTPD does not contain GPL licensed code.
+opensmtpd: possible-gpl-code-linked-with-openssl
