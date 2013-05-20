@@ -1,0 +1,163 @@
+#!/bin/sh
+
+### BEGIN INIT INFO
+# Provides:        opensmtpd
+# Required-Start:  $network $remote_fs $syslog
+# Required-Stop:   $network $remote_fs $syslog
+# Default-Start:   2 3 4 5
+# Default-Stop:    0 1 6
+# Short-Description: Start OpenBSD SMTP server
+### END INIT INFO
+
+PATH=/sbin:/bin:/usr/sbin:/usr/bin
+
+. /lib/lsb/init-functions
+
+SMTPD=/usr/sbin/smtpd
+SMTPCTL=/usr/sbin/smtpctl
+
+START_MDA=yes
+START_MTA=yes
+START_SMTP=yes
+CONFIG_FILE=/etc/smtpd.conf
+VERBOSE=no
+
+[ -f /etc/default/opensmtpd ] && . /etc/default/opensmtpd
+
+
+chk_config() {
+	if [ ! -f ${CONFIG_FILE} ]
+	then
+		echo "Could not find opensmtpd configuration file"
+		return 1
+	fi
+
+	if ( ! ${SMTPD} -f "${CONFIG_FILE}" -n 2>/dev/null >/dev/null )
+	then
+		echo "The opensmtpd configuration file is malformed"
+		return 1
+	fi
+
+	return 0
+}
+
+test_status() {
+	${SMTPCTL} show stats 2>/dev/null >/dev/null
+	return $?
+}
+
+wait_status() {
+	status=$1
+
+	for i in 0 1 2 3 4 5
+	do
+		echo -n "."
+		sleep 1
+
+		test_status
+		real_status=$?
+		[ $real_status ]   && [ $status ]   && return 0
+		[ ! $real_status ] && [ ! $status ] && return 0
+	done
+
+	return 1
+}
+
+start() {
+	if ( ! chk_config )
+	then
+		return 1
+	fi
+
+	cmdline="-f ${CONFIG_FILE}"
+	if [ ${START_MDA} = "no" ]
+	then
+		cmdline="$cmdline -P mda"
+	fi
+	if [ ${START_MTA} = "no" ]
+	then
+		cmdline="$cmdline -P mta"
+	fi
+	if [ ${START_SMTP} = "no" ]
+	then
+		cmdline="$cmdline -P smtp"
+	fi
+	if [ ${VERBOSE} = "yes" ]
+	then
+		cmdline="$cmdline -v"
+	fi
+
+	$SMTPD
+	wait_status 0
+	return $?
+}
+
+stop() {
+	$SMTPCTL stop >/dev/null
+	wait_status 1
+	return $?
+}
+
+case $1 in
+	start)
+		log_daemon_msg "Starting OpenBSD SMTP server" "opensmtpd"
+		if test_status
+		then
+			log_warning_msg "opensmtpd is already running"
+		else
+			start
+			log_end_msg $?
+		fi
+  		;;
+	stop)
+		log_daemon_msg "Stopping OpenBSD SMTP server" "opensmtpd"
+		if ( ! test_status )
+		then
+			log_warning_msg "opensmtpd is not running"
+		else
+			stop
+			log_end_msg $?
+		fi
+  		;;
+	try-restart)
+		log_daemon_msg "Try restarting OpenBSD SMTP server" "opensmtpd"
+		if ( ! test_status )
+		then
+			log_failure_msg "opensmtpd is not running"
+		else
+			stop
+			start
+			log_end_msg $?
+		fi
+		;;
+	restart|force-reload)
+		log_daemon_msg "Restarting OpenBSD SMTP server" "opensmtpd"
+		if ( ! test_status )
+		then
+			log_warning_msg "opensmtpd is not running"
+		else
+			stop
+		fi
+		start
+		log_end_msg $?
+  		;;
+	reload)
+		log_daemon_msg "Reloading OpenBSD SMTP server" "opensmtpd"
+		log_failure_msg "Hum... Don't really know how to do this !"
+		exit 3
+		;;
+	status)
+		if test_status
+		then
+			echo "OpenBSD SMTP server is running"
+			exit 0
+		else
+			echo "OpenBSD SMTP server is not running"
+			exit 3
+		fi
+		;;
+	*)
+		echo "Usage: $0 {start|stop|restart|try-restart|force-reload|reload|status}"
+		exit 2
+		;;
+esac

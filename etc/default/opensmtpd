@@ -1,0 +1,9 @@
+# OpenBSD SMTP server defaults
+
+#START_MDA=yes
+#START_MTA=yes
+#START_SMTP=yes
+
+#CONFIG_FILE=/etc/smtpd.conf
+
+#VERBOSE=no
