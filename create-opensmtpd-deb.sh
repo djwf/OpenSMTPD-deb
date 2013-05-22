@@ -12,7 +12,7 @@ gdir=~/usr/src/opensmtpd-portable
 cd $gdir
 git pull -q
 cdate=$(git log -n 1 --date=iso --format=%ci)
-version=$(date --date="$cdate" +%Y%m%d%H%M%S)-42
+version=$(date --date="$cdate" -u +%Y%m%d%H%M%S)-42
 test ! -f $odir/opensmtpd-${version}_amd64.deb
 
 # At this point, the package doesn't exist: announce the package version so
