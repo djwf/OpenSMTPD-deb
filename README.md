@@ -4,17 +4,9 @@ Automatically build OpenSMTPD debian packages.
 
 ## Usage
 
-Install OpenSMTPD-deb, clone OpenSMTPD-portable git repository.
+Install OpenSMTPD-deb, clone OpenSMTPD git repository.
 
-    git clone git://github.com/poolpOrg/OpenSMTPD-portable.git
-
-Set the location of the OpenSMTPD-portable repository on disk.
-
-    echo '~/usr/src/OpenSMTPD-portable' > OpenSMTPD-portable-location
-
-Set the destination of the debian packages.
-
-    echo '~/tmp/OpenSMTPD-debs' > OpenSMTPD-debs-location
+    git clone -b portable git://github.com/poolpOrg/OpenSMTPD.git
 
 Add a cron job to run create-opensmtpd-deb.sh as your desired interval, here 15
 minutes is used.  Note that this can be done as a normal user.
@@ -23,10 +15,21 @@ minutes is used.  Note that this can be done as a normal user.
 
 ## Installation
 
-### From source
+Installation presumes you cloned the OpenSMTPD repository in your personal `src`
+directory, and want all built packages placed in your personal `tmp` directory.
+Installation and uninstallation respect `DESTDIR`.
 
     git clone git://github.com/sinecure/OpenSMTPD-deb.git
-    cd OpenSMTPD-deb && make && sudo make install
+    cd OpenSMTPD-deb
+    echo '~/usr/src/OpenSMTPD' > location-OpenSMTPD
+    echo '/tmp' > location-packages
+    make
+    make install
+
+## Uninstallation
+
+    cd OpenSMTPD-deb
+    make uninstall
 
 ## Contribute
 
