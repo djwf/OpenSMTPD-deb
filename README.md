@@ -22,7 +22,7 @@ Installation and uninstallation respect `DESTDIR`.
     git clone git://github.com/sinecure/OpenSMTPD-deb.git
     cd OpenSMTPD-deb
     echo '~/usr/src/OpenSMTPD' > location-OpenSMTPD
-    echo '/tmp' > location-packages
+    echo '~/tmp' > location-packages
     make
     make install
 
