@@ -13,20 +13,34 @@ minutes is used.  Note that this can be done as a normal user.
 
     */15 * * * * /usr/local/bin/create-opensmtpd-deb.sh
 
-## Installation
+## Defaults
 
-Installation presumes you cloned the OpenSMTPD repository in your personal `src`
-directory, and want all built packages placed in your personal `tmp` directory.
-Installation and uninstallation respect `DESTDIR`.
+Both installation and uninstallation respect DESTDIR.
+
+OpenSMTPD official repo:        ~/usr/src/OpenSMTPD
+OpenSMTPD debian package repo:  ~/usr/src/opensmtpd.git
+Package directory:              ~/tmp
+DESTDIR:                        ~
+
+## Installation
 
     git clone git://github.com/sinecure/OpenSMTPD-deb.git
     cd OpenSMTPD-deb
-    make install OPENSMTPD=~/usr/src/OpenSMTPD PACKAGES=~/tmp
+    make install
 
 ## Uninstallation
 
+Uninstallation does not touch your repositories (debian packages or OpenSMTPD)
+or your package directory.
+
     cd OpenSMTPD-deb
     make uninstall
+
+## Examples
+
+To change the packages placement directory.
+
+    make install PACKAGES=~/packages
 
 ## Contribute
 
