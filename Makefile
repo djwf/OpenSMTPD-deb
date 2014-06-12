@@ -1,3 +1,9 @@
+ifeq ($(DESTDIR),)
+	destdir=$(HOME)
+else
+	destdir=$(DESTDIR)
+endif
+
 ifeq ($(OPENSMTPD),)
 	opensmtpd=$(HOME)/usr/src/OpenSMTPD
 else
@@ -16,7 +22,7 @@ else
 	packages=$(PACKAGES)
 endif
 
-prefix=$(DESTDIR)/usr/local
+prefix=$(destdir)/usr/local
 exec_prefix=$(prefix)
 bindir=$(exec_prefix)/bin
 sysconfdir=$(prefix)/etc
