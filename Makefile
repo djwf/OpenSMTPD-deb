@@ -56,10 +56,10 @@ uninstall: uninstall-bin uninstall-sysconf
 
 uninstall-bin: create-opensmtpd-deb.sh
 	$(RM) -f $(bindir)/$<
-	-$(RMDIR) -p $(bindir)
+	-$(RMDIR) -p --ignore-fail-on-non-empty $(bindir)
 
 uninstall-sysconf:
 	$(RM) -fr $(sysconfsubdir)
-	-$(RMDIR) -p $(sysconfdir)
+	-$(RMDIR) -p --ignore-fail-on-non-empty $(sysconfdir)
 
 .PHONY: all install uninstall
