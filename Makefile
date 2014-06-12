@@ -11,7 +11,7 @@ else
 endif
 
 ifeq ($(PACKAGES),)
-	packages=/srv/http/caterva.org/apt/.packages
+	packages=$(HOME)/tmp
 else
 	packages=$(PACKAGES)
 endif
