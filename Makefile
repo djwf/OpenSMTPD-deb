@@ -4,6 +4,12 @@ else
 	opensmtpd=$(OPENSMTPD)
 endif
 
+ifeq ($(OFFICIAL),)
+	official=$(HOME)/usr/src/opensmtpd.git
+else
+	official=$(OFFICIAL)
+endif
+
 ifeq ($(PACKAGES),)
 	packages=/srv/http/caterva.org/apt/.packages
 else
