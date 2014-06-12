@@ -25,7 +25,6 @@ sysconfsubdir=$(sysconfdir)/OpenSMTPD-deb
 INSTALL=install
 RM=rm
 RMDIR=rmdir
-MV=mv
 
 all:
 
@@ -37,7 +36,8 @@ install-bin: create-opensmtpd-deb.sh
 	sed -e 's!%%packages%%!$(packages)!' $(bindir)/$< >$(bindir)/$<.new
 	sed -e 's!%%OpenSMTPD%%!$(opensmtpd)!' $(bindir)/$<.new >$(bindir)/$<
 	sed -e 's!%%sysconfdir%%!$(sysconfdir)!' $(bindir)/$< >$(bindir)/$<.new
-	$(MV) $(bindir)/$<.new $(bindir)/$<
+	sed -e 's!%%OFFICIAL%%!$(official)!' $(bindir)/$<.new >$(bindir)/$<
+	$(RM) $(bindir)/$<.new
 
 install-sysconf: postinst postrm preinst prerm
 	$(INSTALL) -d $(sysconfsubdir)/etc/default
