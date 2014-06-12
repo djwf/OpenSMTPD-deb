@@ -1,1 +1,2 @@
 - Remove packages older than one month if there are more than ten packages.
+- Figure out why changing mode to 755 with `install` doesn't work, but 644 does.
