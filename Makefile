@@ -22,6 +22,7 @@ bindir=$(exec_prefix)/bin
 sysconfdir=$(prefix)/etc
 sysconfsubdir=$(sysconfdir)/OpenSMTPD-deb
 
+CHMOD=chmod
 INSTALL=install
 RM=rm
 RMDIR=rmdir
@@ -38,6 +39,7 @@ install-bin: create-opensmtpd-deb.sh
 	sed -e 's!%%sysconfdir%%!$(sysconfdir)!' $(bindir)/$< >$(bindir)/$<.new
 	sed -e 's!%%OFFICIAL%%!$(official)!' $(bindir)/$<.new >$(bindir)/$<
 	$(RM) $(bindir)/$<.new
+	$(CHMOD) 755 $(bindir)/$<
 
 install-sysconf: postinst postrm preinst prerm
 	$(INSTALL) -d $(sysconfsubdir)/etc/default
@@ -45,10 +47,10 @@ install-sysconf: postinst postrm preinst prerm
 	$(INSTALL) -d $(sysconfsubdir)/etc/init.d
 	$(INSTALL) etc/init.d/opensmtpd $(sysconfsubdir)/etc/init.d
 	$(INSTALL) -d $(sysconfsubdir)/usr/share/doc/opensmtpd
-	$(INSTALL) usr/share/doc/opensmtpd/* \
+	$(INSTALL) -m 644 usr/share/doc/opensmtpd/* \
 		$(sysconfsubdir)/usr/share/doc/opensmtpd
 	$(INSTALL) -d $(sysconfsubdir)/usr/share/lintian/overrides
-	$(INSTALL) usr/share/lintian/overrides/opensmtpd \
+	$(INSTALL) -m 644 usr/share/lintian/overrides/opensmtpd \
 		$(sysconfsubdir)/usr/share/lintian/overrides
 	$(INSTALL) $^ $(sysconfsubdir)
 
