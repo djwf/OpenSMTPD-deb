@@ -4,7 +4,7 @@ set -e
 # Set directory variables.
 sdir="%%OpenSMTPD%%"
 pdir="%%packages%%"
-edir="%%sysconfdir%%/OpenSMTPD-dir"
+edir="%%sysconfdir%%/OpenSMTPD-deb"
 tdir="$(mktemp -d --tmpdir=$HOME/tmp)"
 idir="$tdir/installdir"
 
@@ -13,7 +13,7 @@ idir="$tdir/installdir"
 cd "$sdir"
 git pull -q
 cdate=$(git log -n 1 --date=iso --format=%ci)
-version=$(date --date="$cdate" -u +%Y%m%d%H%M%S)-42
+version=$(date --date="$cdate" -u +%Y%m%d%H%M%S)"-gitp"
 test ! -f "$pdir"/opensmtpd-${version}_amd64.deb
 
 # At this point, the package doesn't exist: announce the package version so
@@ -56,13 +56,13 @@ gzip -9 "$idir"/usr/share/doc/opensmtpd/README.md
 # Add and rename LICENSE file from the git repository.
 cp "$sdir"/LICENSE "$idir"/usr/share/doc/opensmtpd/copyright
 
-# Add a changelog for each snapshot.
+# Add a changelog for the snapshot.
 cat <<EOF > "$idir"/usr/share/doc/opensmtpd/changelog.Debian
 opensmtpd ($version) wheezy; urgency=low
 
   * new snapshot
 
- -- David J. Weller-Fahy <dave@weller-fahy.com>  $(date -R)
+ -- An Author  $(date -R)
 EOF
 gzip -9 "$idir"/usr/share/doc/opensmtpd/changelog.Debian
 
@@ -89,14 +89,14 @@ ln -s smtpd.8.gz "$idir"/usr/share/man/man8/sendmail.8.gz
 env EDITOR="sed -i -r -e '/^(Vendor: |License: ).*$/d'" /usr/local/bin/fpm \
 		-ef -s dir -t deb -n opensmtpd -v $version -C "$idir" \
 		-p "$pdir"/opensmtpd-VERSION_ARCH.deb \
-		-d "adduser" \
-		-d "libc6 (>= 2.13-38)" \
-		-d "libdb5.1" \
-		-d "libevent-2.0-5 (>= 2.0.19-stable)" \
-		-d "libevent-core-2.0-5 (>= 2.0.19-stable)" \
-		-d "libevent-openssl-2.0-5 (>= 2.0.19-stable)" \
-		-d "libssl1.0.0 (>= 1.0.1e-2)" \
-		-d "zlib1g (>= 1:1.2.7)" \
+		-d "libc6" \
+		-d "libdb5.3" \
+		-d "libevent-2.0-5" \
+		-d "libpam0g" \
+		-d "libssl1.0.0" \
+		-d "zlib1g" \
+		-d "debconf | debconf-2.0" \
+		-d "adduser"
 		-m "David J. Weller-Fahy <dave@weller-fahy.com>" \
 		--deb-user root \
 		--deb-group root \
