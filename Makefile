@@ -10,14 +10,8 @@ else
 	opensmtpd=$(OPENSMTPD)
 endif
 
-ifeq ($(OFFICIAL),)
-	official=$(HOME)/usr/src/opensmtpd.git
-else
-	official=$(OFFICIAL)
-endif
-
 ifeq ($(PACKAGES),)
-	packages=$(HOME)/tmp
+	packages=$(HOME)/usr/debian-packages
 else
 	packages=$(PACKAGES)
 endif
