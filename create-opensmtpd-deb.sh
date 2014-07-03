@@ -39,8 +39,6 @@ mkdir "$idir"
 make install DESTDIR="$idir"
 
 # Place files in etc.
-mkdir -p "$idir"/etc/default
-cp "$edir"/etc/default/opensmtpd "$idir"/etc/default/opensmtpd
 mkdir -p "$idir"/etc/init.d
 cp "$edir"/etc/init.d/opensmtpd "$idir"/etc/init.d/opensmtpd
 
@@ -68,15 +66,6 @@ opensmtpd ($version) wheezy; urgency=low
 EOF
 gzip -9 "$idir"/usr/share/doc/opensmtpd/changelog.Debian
 
-# Remove files not needed for debian install.
-(cd "$idir"/usr/libexec/opensmtpd && rm -f \
-	backend-queue-null backend-queue-ram backend-queue-stub \
-	backend-table-stub filter-dnsbl filter-monkey filter-stub filter-trace)
-
-# Change hard to symbolic links.
-ln -sf ../libexec/opensmtpd/makemap "$idir"/usr/bin/newaliases
-ln -sf ../libexec/opensmtpd/makemap "$idir"/usr/sbin/makemap
-
 # Strip executables.
 find "$idir"/usr -type f -executable -exec strip {} \;
 
@@ -98,7 +87,6 @@ env EDITOR="sed -i -r -e '/^(Vendor: |License: ).*$/d'" /usr/local/bin/fpm \
 		--deb-user root \
 		--deb-group root \
 		--category mail \
-		--config-files /etc/default/opensmtpd \
 		--config-files /etc/init.d/opensmtpd \
 		--config-files /etc/smtpd.conf \
 		--after-install "$edir"/postinst \
