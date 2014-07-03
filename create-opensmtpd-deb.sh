@@ -8,6 +8,8 @@ edir="%%sysconfdir%%/OpenSMTPD-deb"
 tdir="$(mktemp -d --tmpdir=$HOME/tmp)"
 idir="$tdir/installdir"
 
+mkdir -p "$pdir"
+
 # Check to see if the most recent commit is new by comparing timestamp with
 # previously built packages.
 cd "$sdir"
@@ -74,7 +76,6 @@ gzip -9 "$idir"/usr/share/doc/opensmtpd/changelog.Debian
 # Change hard to symbolic links.
 ln -sf ../libexec/opensmtpd/makemap "$idir"/usr/bin/newaliases
 ln -sf ../libexec/opensmtpd/makemap "$idir"/usr/sbin/makemap
-ln -sf ../sbin/smtpctl "$idir"/usr/bin/mailq
 
 # Strip executables.
 find "$idir"/usr -type f -executable -exec strip {} \;
@@ -82,12 +83,8 @@ find "$idir"/usr -type f -executable -exec strip {} \;
 # Compress man pages.
 find "$idir"/usr/share/man/man? -type f -exec gzip -9 {} \;
 
-# Link man pages.
-ln -s smtpctl.8.gz "$idir"/usr/share/man/man8/mailq.8.gz
-ln -s smtpd.8.gz "$idir"/usr/share/man/man8/sendmail.8.gz
-
 env EDITOR="sed -i -r -e '/^(Vendor: |License: ).*$/d'" /usr/local/bin/fpm \
-		-ef -s dir -t deb -n opensmtpd -v $version -C "$idir" \
+		-ef -s dir -t deb -n opensmtpd -v "$version" -C "$idir" \
 		-p "$pdir"/opensmtpd-VERSION_ARCH.deb \
 		-d "libc6" \
 		-d "libdb5.3" \
@@ -96,7 +93,7 @@ env EDITOR="sed -i -r -e '/^(Vendor: |License: ).*$/d'" /usr/local/bin/fpm \
 		-d "libssl1.0.0" \
 		-d "zlib1g" \
 		-d "debconf | debconf-2.0" \
-		-d "adduser"
+		-d "adduser" \
 		-m "David J. Weller-Fahy <dave@weller-fahy.com>" \
 		--deb-user root \
 		--deb-group root \
@@ -111,7 +108,7 @@ env EDITOR="sed -i -r -e '/^(Vendor: |License: ).*$/d'" /usr/local/bin/fpm \
 		--provides mail-transport-agent \
 		--conflicts mail-transport-agent \
 		--replaces mail-transport-agent \
-		--url https://github.com/poolpOrg/OpenSMTPD \
+		--url https://github.com/OpenSMTPD/OpenSMTPD \
 		--description "Simple Mail Transfer Protocol daemon
 This is the portable version of OpenSMTPD, a FREE implementation of the
 server-side SMTP protocol as defined by RFC 5321, with some additional
