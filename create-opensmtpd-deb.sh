@@ -82,6 +82,11 @@ find "$idir"/usr -type f -executable -exec strip {} \;
 # Compress man pages.
 find "$idir"/usr/share/man/man? -type f -exec gzip -9 {} \;
 
+# Create directories in the /var heirarchy.
+mkdir -p "$idir"/var/lib/opensmtpd/empty
+mkdir -p -m 711 "$idir"/var/spool/smtpd
+mkdir -p -m 1777 "$idir"/var/spool/smtpd/offline
+
 env EDITOR="sed -i -r -e '/^(Vendor: |License: ).*$/d'" /usr/local/bin/fpm \
 		-ef -s dir -t deb -n opensmtpd -v "$version" -C "$idir" \
 		-p "$pdir"/opensmtpd-VERSION_ARCH.deb \
@@ -108,11 +113,9 @@ env EDITOR="sed -i -r -e '/^(Vendor: |License: ).*$/d'" /usr/local/bin/fpm \
 		--conflicts mail-transport-agent \
 		--replaces mail-transport-agent \
 		--url https://github.com/OpenSMTPD/OpenSMTPD \
-		--description "Simple Mail Transfer Protocol daemon
-This is the portable version of OpenSMTPD, a FREE implementation of the
-server-side SMTP protocol as defined by RFC 5321, with some additional
-standard extensions. It allows ordinary machines to exchange e-mails
-with other systems speaking the SMTP protocol." \
+		--description "OpenSMTPD portable
+This is a snapshot of the OpenSMTPD git repository portable branch: it is not
+stable and should not be used unless you want your mail server to break." \
 		.
 
 rm -r "$tdir"
