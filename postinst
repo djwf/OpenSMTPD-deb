@@ -1,17 +1,183 @@
 #!/bin/sh
-# postinst script for opensmtpd
-#
-# see: dh_installdeb(1)
 
 set -e
+. /usr/share/debconf/confmodule
+
+# summary of how this script can be called:
+#        * <postinst> `configure' <most-recently-configured-version>
+#        * <old-postinst> `abort-upgrade' <new version>
+#        * <conflictor's-postinst> `abort-remove' `in-favour' <package>
+#          <new-version>
+#        * <postinst> `abort-remove'
+#        * <deconfigured's-postinst> `abort-deconfigure' `in-favour'
+#          <failed-install-package> <version> `removing'
+#          <conflicting-package> <version>
+# for details, see http://www.debian.org/doc/debian-policy/ or
+# the debian-policy package
+
+update_alias () {
+    ALIAS=$1
+    ADDR=$2
+    # Operation is as follows:
+    # If debconf has a new non-empty value for the root alias:
+    #   If the alias file already has that alias:
+    #     Do nothing
+    #   else if the alias file has no commented out root alias and
+    #           the alias file has no root alias:
+    #     Append the new alias
+    #   else if the alias file has a commented out root alias and
+    #           the alias file has no root alias:
+    #     Insert the new alias after the commented out one
+    #   else:
+    #     Comment out the existing root alias and insert the new one
+    #     below it
+    if [ "${ALIAS}" -a "${ADDR}" -a -f /etc/aliases ]; then
+        REGEX="${ALIAS}[[:space:]]*:[[:space:]]*"
+        # Don't abort if an egrep has a non-zero status, i.e., fails to find a
+        # match
+        set +e
+        # Is the alias in the file?
+        egrep "^${REGEX}.*" /etc/aliases > /dev/null 2>&1
+        HAS_ALIAS=$?
+        # Is the new alias in the file?
+        egrep "^${REGEX}${ADDR}($|[[:space:]]*#.*)" /etc/aliases >/dev/null 2>&1
+        HAS_OUR_ALIAS=$?
+        # Is the alias commented out in the file?
+        egrep "^#[[:space:]]*${REGEX}.*" /etc/aliases > /dev/null 2>&1
+        HAS_COMMENTED_ALIAS=$?
+        set -e
+        if [ $HAS_OUR_ALIAS -eq 0 ]; then
+            # The alias file already has our alias, do nothing
+            true
+        elif [ $HAS_ALIAS -ne 0 -a $HAS_COMMENTED_ALIAS -ne 0 ]; then
+            # There's no ${ALIAS} alias whatsoever, add ours to the end of the
+            # file
+            printf "\n${ALIAS}:		${ADDR}" >> /etc/aliases
+        else
+            # /etc/aliases has either the alias with the wrong value or alias
+            # commented out
+            if [ $HAS_ALIAS -eq 0 ]; then
+                # aliases has the alias with the wrong value, we'll comment it
+                # out and add the new one below it.
+                SEARCH="/^${REGEX}.*/"
+            else
+                # aliases only has a commented out version of the alias; add
+                # ours below it.
+                SEARCH="/^#[[:space:]]*${REGEX}.*/"
+            fi
+            # We don't have an instance of the desired alias, insert it.
+            #
+            # ed:
+            # Turn on descriptive errors to assist in debugging should the script
+            # fail.
+            # Find the first occurence of a "${ALIAS}:" alias / comment.
+            # Comment it out if it's an alias.
+            # Add a line with the new alias.
+            # Comment out any subsequent ${ALIAS}: aliases that may exist.
+            # Write changes to disk.
+            #
+            # Note, if using <<-, you *must* indent with tabs. Add a "|| true"
+            # since ed will exit 1 at the end if a search failed.
+            ed -s /etc/aliases <<-EOF > /dev/null 2>&1 || true
+		H
+		${SEARCH}
+		s/^${REGEX}/# &/
+		a
+		${ALIAS}:		${ADDR}
+		.
+		+1,\$s/^${ALIAS}[[:space:]]*:.*/# &/g
+		w
+		EOF
+        fi
+    fi
+}
+
+
+db_fget opensmtpd/mailname changed
+# Has the user reconfigured / updated the debconf value?
+if [ "${RET}" = "true" ]; then
+    db_get opensmtpd/mailname
+    echo "${RET}" > /etc/mailname
+    db_fset opensmtpd/mailname changed false
+fi
+
+db_get opensmtpd/root_address
+ROOT_ADDRESS="${RET}"
+# The user can leave ROOT_ADDRESS blank to not forward root mail anywhere.
+if [ ! -f /etc/aliases ]; then
+    if [ "${ROOT_ADDRESS}" ]; then
+        ROOT_LINE="root:		${ROOT_ADDRESS}"
+    else
+        ROOT_LINE="# root:"
+    fi
+    # Note, if using <<-, you *must* indent with tabs; moreover, blank lines
+    # must also contain the appropriate number of tab.
+    cat <<-EOF > /etc/aliases
+	# Enter mail aliases below in the format described by aliases(5)
+	${ROOT_LINE}
+	
+	# RFC 2142 NETWORK OPERATIONS MAILBOX NAMES
+	abuse:		root
+	noc:		root
+	security:	root
+	
+	# RFC 2142 SUPPORT MAILBOX NAMES FOR SPECIFIC INTERNET SERVICES
+	postmaster:	root
+	hostmaster:	root
+	# usenet:	root
+	# news:		usenet
+	webmaster:	root
+	www:		webmaster
+	# uucp:		root
+	ftp:		root
+	EOF
+    db_fset opensmtpd/root_address changed false
+fi
+
+
+db_fget opensmtpd/root_address changed
+if [ "${RET}" = "true" ]; then
+    update_alias "root" "${ROOT_ADDRESS}"
+fi
+db_fset opensmtpd/root_address changed false
+db_fget opensmtpd/root_address first
+if [ "${RET}" = "true" -a ${ROOT_ADDRESS} ]; then
+    # It's our first time configuring aliases; create a postmaster alias as
+    # promised in the template if it doesn't already exist. Use ed to insert it
+    # after the root alias, which is guaranteed to exist by the actions above.
+    egrep "^postmaster[[:space:]]*:" /etc/aliases >/dev/null 2>&1 || \
+        ed -s /etc/aliases <<-EOF > /dev/null 2>&1
+		H
+		/^root[[:space:]]*:.*/
+		a
+		postmaster:	root
+		.
+		w
+		EOF
+    db_fset opensmtpd/root_address first false
+fi
+makemap -t aliases /etc/aliases
 
 case "$1" in
     configure)
-        update-rc.d opensmtpd defaults
-        service opensmtpd start
+        for name in opensmtpd opensmtpq; do
+            id -g ${name} > /dev/null 2>&1 || addgroup --system ${name}
+        done
+
+        # Based on postfix.postinst:
+        id opensmtpd > /dev/null 2>&1 || \
+                adduser --system --home /var/lib/opensmtpd/empty \
+                    --no-create-home --disabled-password \
+                    --gecos "OpenSMTD Daemon" \
+                    --ingroup opensmtpd opensmtpd
+        id opensmtpq > /dev/null 2>&1 || \
+                adduser --system --home /var/lib/opensmtpd/empty \
+                    --no-create-home --disabled-password \
+                    --gecos "OpenSMTD queue user" \
+                    --ingroup opensmtpq opensmtpq
     ;;
 
-    abort-upgrade|abort-remove|abort-deconfigure)
+    abort-upgrade|abort-remove|abort-deconfigure|reconfigure)
     ;;
 
     *)
@@ -19,5 +185,18 @@ case "$1" in
         exit 1
     ;;
 esac
+
+db_stop
+
+# dh_installdeb will replace this with shell code automatically
+# generated by other debhelper scripts.
+
+# Automatically added by dh_installinit
+if [ -x "/etc/init.d/opensmtpd" ]; then
+	update-rc.d opensmtpd defaults >/dev/null
+	invoke-rc.d opensmtpd start || exit $?
+fi
+# End automatically added section
+
 
 exit 0
