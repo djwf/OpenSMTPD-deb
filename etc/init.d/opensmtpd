@@ -1,163 +1,145 @@
 #!/bin/sh
+# /etc/init.d/opensmtpd
+#
+# Written by Daniel Walrond <debian@djw.org.uk>
+#        and Ryan Kavanagh <rak@debian.org>
 
 ### BEGIN INIT INFO
-# Provides:        opensmtpd
-# Required-Start:  $network $remote_fs $syslog
-# Required-Stop:   $network $remote_fs $syslog
-# Default-Start:   2 3 4 5
-# Default-Stop:    0 1 6
-# Short-Description: Start OpenBSD SMTP server
+# Provides:          opensmtpd
+# Required-Start:    $remote_fs $syslog $network
+# Required-Stop:     $remote_fs $syslog $network
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: opensmtpd Mail Transport Agent
+# Description:       OpenSMTPD
 ### END INIT INFO
 
-PATH=/sbin:/bin:/usr/sbin:/usr/bin
+# Do not "set -e"; /lib/lsb/init-functions included below may fail if "set -e"
+# is in effect and echoing status messages to the console fails.
+set -u
+
+BASE="smtpd"
+DAEMON="/usr/sbin/smtpd"
+CONTROL="/usr/sbin/smtpctl"
+PIDFILE="/run/${BASE}.pid"
+DESC="opensmtpd"
+
+test -x /usr/sbin/smtpd || exit 0
 
 . /lib/lsb/init-functions
 
-SMTPD=/usr/sbin/smtpd
-SMTPCTL=/usr/sbin/smtpctl
-
-START_MDA=yes
-START_MTA=yes
-START_SMTP=yes
-CONFIG_FILE=/etc/smtpd.conf
-VERBOSE=no
-
-[ -f /etc/default/opensmtpd ] && . /etc/default/opensmtpd
-
-
-chk_config() {
-	if [ ! -f ${CONFIG_FILE} ]
-	then
-		echo "Could not find opensmtpd configuration file"
-		return 1
-	fi
-
-	if ( ! ${SMTPD} -f "${CONFIG_FILE}" -n 2>/dev/null >/dev/null )
-	then
-		echo "The opensmtpd configuration file is malformed"
-		return 1
-	fi
-
-	return 0
+smtpd_start()
+{
+#if status_of_proc -p "${PIDFILE}" "${DAEMON}" "${DESC}" > /dev/null;
+if status_of_proc "${DAEMON}" "${DESC}" > /dev/null;
+then
+  log_progress_msg "opensmtpd already running ..."
+  return 1
+else
+  if start-stop-daemon \
+      --start \
+      --exec "${DAEMON}"; then
+    log_progress_msg "opensmtpd"
+    return 0
+  else
+    log_progress_msg "opensmtpd"
+    return 1
+  fi
+fi
 }
 
-test_status() {
-	${SMTPCTL} show stats 2>/dev/null >/dev/null
-	return $?
-}
-
-wait_status() {
-	status=$1
-
-	for i in 0 1 2 3 4 5
-	do
-		echo -n "."
-		sleep 1
-
-		test_status
-		real_status=$?
-		[ $real_status ]   && [ $status ]   && return 0
-		[ ! $real_status ] && [ ! $status ] && return 0
-	done
-
-	return 1
-}
-
-start() {
-	if ( ! chk_config )
-	then
-		return 1
-	fi
-
-	cmdline="-f ${CONFIG_FILE}"
-	if [ ${START_MDA} = "no" ]
-	then
-		cmdline="$cmdline -P mda"
-	fi
-	if [ ${START_MTA} = "no" ]
-	then
-		cmdline="$cmdline -P mta"
-	fi
-	if [ ${START_SMTP} = "no" ]
-	then
-		cmdline="$cmdline -P smtp"
-	fi
-	if [ ${VERBOSE} = "yes" ]
-	then
-		cmdline="$cmdline -v"
-	fi
-
-	$SMTPD
-	wait_status 0
-	return $?
-}
-
-stop() {
-	$SMTPCTL stop >/dev/null
-	wait_status 1
-	return $?
-}
-
-case $1 in
-	start)
-		log_daemon_msg "Starting OpenBSD SMTP server" "opensmtpd"
-		if test_status
-		then
-			log_warning_msg "opensmtpd is already running"
-		else
-			start
-			log_end_msg $?
-		fi
-  		;;
-	stop)
-		log_daemon_msg "Stopping OpenBSD SMTP server" "opensmtpd"
-		if ( ! test_status )
-		then
-			log_warning_msg "opensmtpd is not running"
-		else
-			stop
-			log_end_msg $?
-		fi
-  		;;
-	try-restart)
-		log_daemon_msg "Try restarting OpenBSD SMTP server" "opensmtpd"
-		if ( ! test_status )
-		then
-			log_failure_msg "opensmtpd is not running"
-		else
-			stop
-			start
-			log_end_msg $?
-		fi
-		;;
-	restart|force-reload)
-		log_daemon_msg "Restarting OpenBSD SMTP server" "opensmtpd"
-		if ( ! test_status )
-		then
-			log_warning_msg "opensmtpd is not running"
-		else
-			stop
-		fi
-		start
-		log_end_msg $?
-  		;;
-	reload)
-		log_daemon_msg "Reloading OpenBSD SMTP server" "opensmtpd"
-		log_failure_msg "Hum... Don't really know how to do this !"
-		exit 3
-		;;
-	status)
-		if test_status
-		then
-			echo "OpenBSD SMTP server is running"
-			exit 0
-		else
-			echo "OpenBSD SMTP server is not running"
-			exit 3
-		fi
-		;;
-	*)
-		echo "Usage: $0 {start|stop|restart|try-restart|force-reload|reload|status}"
-		exit 2
-		;;
+smtpd_stop()
+{
+status="0"
+# pidofproc constructs PIDFILE from BASE
+pidofproc "${BASE}" >/dev/null || status="$?"
+# pidofproc returns 0 if daemon is running
+#                   1 if daemon isn't running
+#                   2 never
+#                   3 if the pidfile doesn't exist
+#                   4 if it can't read pidfile
+case "${status}" in
+  0|4)
+    if "${CONTROL}" stop > /dev/null 2>&1; then
+      log_progress_msg "opensmtpd"
+      return 0
+    else
+      log_progress_msg "opensmtpd"
+      return 1
+    fi
+    ;;
+  *)
+    log_progress_msg "opensmtpd is not running ..."
+    return 1
+    ;;
 esac
+}
+
+smtpd_config_check()
+{
+# ${DAEMON} -n checks the config file's validity
+if "${DAEMON}" -n >/dev/null 2>&1; then
+  return 0
+else
+  log_end_msg 1
+  "${DAEMON}" -n
+  return 1
+fi
+}
+
+case "$1" in
+start)
+  log_daemon_msg "Starting MTA"
+  # Although smtpd checks the config automatically on startup,
+  # check it manually ourselves so that error messages are
+  # printed after our "failed!" instead of between it and
+  # "Starting MTA"
+  if smtpd_config_check; then
+    smtpd_start
+    log_end_msg $?
+  fi
+  ;;
+stop)
+  log_daemon_msg "Stopping MTA"
+  smtpd_stop
+  log_end_msg $?
+  ;;
+restart)
+  log_daemon_msg "Stopping MTA for restart"
+  # If the check fails, the log_end_msg in smtpd_config_check
+  # will output "failed!" for us.
+  if smtpd_config_check; then
+    smtpd_stop
+    log_end_msg $?
+    log_daemon_msg "Restarting MTA"
+    smtpd_start
+    log_end_msg $?
+  fi
+  ;;
+force-reload)
+  log_daemon_msg "Stopping MTA for reload"
+  smtpd_stop
+  log_end_msg $?
+  log_daemon_msg "Restarting MTA"
+  smtpd_start
+  log_end_msg $?
+  ;;
+check)
+  log_daemon_msg "Checking MTA configuration"
+  if smtpd_config_check; then
+    log_progress_msg "success"
+    log_end_msg $?
+  fi
+  ;;
+status)
+  status_of_proc "${DAEMON}" "MTA ${DESC}"
+  ;;
+*)
+  echo "Usage: $0 {start|stop|restart|force-reload|status|check}"
+  exit 1
+  ;;
+esac
+
+exit 0
+
+# vim:set sw=2:
