@@ -28,7 +28,9 @@ echo
 
 # Build everything.
 ./bootstrap
-./configure --prefix=/usr --sysconfdir=/etc \
+./configure --prefix=/usr \
+	--sysconfdir=/etc \
+	--libexecdir=/usr/lib/x86_64-linux-gnu \
 	CFLAGS="$(dpkg-buildflags --get CFLAGS)" \
 	CPPFLAGS="$(dpkg-buildflags --get CPPFLAGS)" \
 	CXXFLAGS="$(dpkg-buildflags --get CXXFLAGS)" \
@@ -37,6 +39,14 @@ make clean
 make
 mkdir "$idir"
 make install DESTDIR="$idir"
+
+# Remove mailq link.
+rm -f "$idir"/usr/sbin/mailq
+
+# Add sendmail link.
+cd "$idir"/usr/sbin
+ln -s smtpctl sendmail
+cd "$sdir"
 
 # Place files in etc.
 mkdir -p "$idir"/etc/init.d
