@@ -2,3 +2,5 @@
 opensmtpd: copyright-should-refer-to-common-license-file-for-gpl
 # OpenSMTPD does not contain GPL licensed code.
 opensmtpd: possible-gpl-code-linked-with-openssl
+opensmtpd: non-standard-dir-perm var/spool/smtpd/ 0711 != 0755
+opensmtpd: non-standard-dir-perm var/spool/smtpd/offline/ 1777 != 0755
