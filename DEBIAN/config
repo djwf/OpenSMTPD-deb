@@ -1,0 +1,67 @@
+#!/bin/sh
+# Copyright (C) 2013 Ryan Kavanagh <rak@debian.org>
+# Distributed under the ISC license, as documented in opensmtpd's
+# debian/copyright file
+
+set -e
+. /usr/share/debconf/confmodule
+
+getalias () {
+    sed -n "s/^${1}\s*:\s*\([^\s*#.*]*\)\s*#\?.*/\1/p" /etc/aliases
+}
+
+db_fget opensmtpd/mailname seen
+# Have we previously configured this variable?
+if [ "${RET}" = "true" ]; then
+    # Update the debconf value if it has changed
+    if [ -f "/etc/mailname" ]; then
+        db_set opensmtpd/mailname `cat /etc/mailname`
+    else
+        # The user has cleared out mailname; set our value to the empty string
+        # accordingly
+        db_set opensmtpd/mailname ""
+    fi
+else
+    if [ -f "/etc/mailname" ]; then
+        # If the user previously created a mailname file, default to its value
+        db_set opensmtpd/mailname `cat /etc/mailname`
+    else
+        # Otherwise, default to our FQDN
+        # /etc/mailname and opensmtpd/mailname are both empty
+        # Default to the FQDN
+        MAILNAME=`hostname --fqdn 2> /dev/null`
+        # Something when wrong; resort to localdomain
+        if [ ! $? ]; then
+            MAILNAME="localdomain"
+        fi
+        # Update our DB with this default for when we prompt the user
+        db_set opensmtpd/mailname "${MAILNAME}"
+    fi
+fi
+
+db_fset opensmtpd/mailname changed false
+# Set the changed flag if this gets reconfigured so that we can update
+# /etc/mailname accordingly in postinst
+( db_input high opensmtpd/mailname && \
+  db_fset opensmtpd/mailname changed true ) || true
+db_go || true
+
+# Update the debconf value if it has changed
+db_fget opensmtpd/root_address seen
+if [ "${RET}" = "false" ]; then
+    # This is the first time configuring this question; we mark it as such so
+    # that we know to create the postmaster alias to root
+    db_fset opensmtpd/root_address first true
+fi
+if [ -f "/etc/aliases" ]; then
+    db_set opensmtpd/root_address $(getalias "root")
+else
+    # The user has cleared out aliases; set our value to the empty string
+    # accordingly
+    db_set opensmtpd/root_address ""
+fi
+
+db_fset opensmtpd/root_address changed false
+( db_input high opensmtpd/root_address  && \
+  db_fset opensmtpd/root_address changed true ) || true
+db_go || true
