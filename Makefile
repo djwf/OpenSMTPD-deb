@@ -41,9 +41,8 @@ install-bin: create-opensmtpd-deb.sh
 	$(RM) $(bindir)/$<.new
 	$(CHMOD) 755 $(bindir)/$<
 
-install-sysconf: postinst postrm preinst prerm
-	$(INSTALL) -d $(sysconfsubdir)/etc/default
-	$(INSTALL) etc/default/opensmtpd $(sysconfsubdir)/etc/default
+install-sysconf: DEBIAN/postinst DEBIAN/postrm DEBIAN/preinst DEBIAN/prerm \
+		DEBIAN/config
 	$(INSTALL) -d $(sysconfsubdir)/etc/init.d
 	$(INSTALL) etc/init.d/opensmtpd $(sysconfsubdir)/etc/init.d
 	$(INSTALL) -d $(sysconfsubdir)/usr/share/doc/opensmtpd
