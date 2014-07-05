@@ -52,6 +52,7 @@ install-sysconf: DEBIAN/postinst DEBIAN/postrm DEBIAN/preinst DEBIAN/prerm \
 	$(INSTALL) -m 644 usr/share/lintian/overrides/opensmtpd \
 		$(sysconfsubdir)/usr/share/lintian/overrides
 	$(INSTALL) $^ $(sysconfsubdir)
+	$(CHMOD) 644 $(sysconfsubdir)/10_smtpd.conf.diff
 
 uninstall: uninstall-bin uninstall-sysconf
 
