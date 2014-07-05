@@ -17,9 +17,9 @@ minutes is used.  Note that this can be done as a normal user.
 
 Both installation and uninstallation respect DESTDIR.
 
-OpenSMTPD debian package repo:  ~/usr/src/OpenSMTPD
-Package directory:              ~/usr/debian-packages
-DESTDIR:                        ~
+    OpenSMTPD debian package repo:  ~/usr/src/OpenSMTPD
+    Package directory:              ~/usr/debian-packages
+    DESTDIR:                        ~
 
 ## Installation
 
