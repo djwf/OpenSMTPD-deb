@@ -3,6 +3,6 @@ opensmtpd for Debian
 
 Differences with opensmtpd:
 
-	
+	Adjustments to ensure compatibility with official package.
 
- -- Eric Faurot <eric@openbsd.org>  Mon, 15 Oct 2012 14:18:25 +0200
+ -- David J. Weller-Fahy <dave@weller-fahy.com>  Fri, 04 Jul 2014 18:51:42 -0700
