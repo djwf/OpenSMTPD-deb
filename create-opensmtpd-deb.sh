@@ -52,6 +52,9 @@ cd "$sdir"
 mkdir -p "$idir"/etc/init.d
 cp "$edir"/etc/init.d/opensmtpd "$idir"/etc/init.d/opensmtpd
 
+# Change config file location of aliases.
+patch "$idir"/etc/smtpd.conf < "$edir"/10_smtpd.conf.diff
+
 # Place files in usr.
 mkdir -p "$idir"/usr/share/doc/opensmtpd
 cp "$edir"/usr/share/doc/opensmtpd/* "$idir"/usr/share/doc/opensmtpd/
