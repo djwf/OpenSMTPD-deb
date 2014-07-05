@@ -96,14 +96,14 @@ env EDITOR="sed -i -r -e '/^(Vendor: |License: ).*$/d'" /usr/local/bin/fpm \
 		-m "David J. Weller-Fahy <dave@weller-fahy.com>" \
 		--deb-user root \
 		--deb-group root \
-		--deb-config "$edir"/DEBIAN/config \
+		--deb-config "$edir"/config \
 		--category mail \
 		--config-files /etc/init.d/opensmtpd \
 		--config-files /etc/smtpd.conf \
-		--after-install "$edir"/DEBIAN/postinst \
-		--before-install "$edir"/DEBIAN/preinst \
-		--after-remove "$edir"/DEBIAN/postrm \
-		--before-remove "$edir"/DEBIAN/prerm \
+		--after-install "$edir"/postinst \
+		--before-install "$edir"/preinst \
+		--after-remove "$edir"/postrm \
+		--before-remove "$edir"/prerm \
 		--provides mail-transport-agent \
 		--conflicts mail-transport-agent \
 		--replaces mail-transport-agent \
