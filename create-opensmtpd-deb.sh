@@ -93,6 +93,7 @@ mkdir -p -m 1777 "$idir"/var/spool/smtpd/offline
 env EDITOR="sed -i -r -e '/^(Vendor: |License: ).*$/d'" /usr/local/bin/fpm \
 		-ef -s dir -t deb -n opensmtpd -v "$version" -C "$idir" \
 		-p "$pdir"/opensmtpd-VERSION_ARCH.deb \
+		-d "libasr" \
 		-d "libc6" \
 		-d "libdb5.3" \
 		-d "libevent-2.0-5" \
