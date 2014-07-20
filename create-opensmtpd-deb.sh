@@ -118,7 +118,7 @@ env EDITOR="sed -i -r -e '/^(Vendor: |License: ).*$/d'" /usr/local/bin/fpm \
 		--replaces mail-transport-agent \
 		--url https://github.com/OpenSMTPD/OpenSMTPD \
 		--description "OpenSMTPD portable
-This is a snapshot of the OpenSMTPD git repository portable branch: it is not
+This is a snapshot of the OpenSMTPD git repository portable branch: it is not 
 stable and should not be used unless you want your mail server to break." \
 		.
 
