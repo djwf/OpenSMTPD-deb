@@ -1,14 +1,14 @@
 # OpenSMTPD-deb
 
-Automatically build OpenSMTPD debian packages.
+Automatically build an OpenSMTPD debian package.
 
 ## Usage
 
-Install OpenSMTPD-deb, then clone OpenSMTPD git repository.
+Install OpenSMTPD-deb, then clone the OpenSMTPD git repository.
 
     git clone -b portable git://github.com/OpenSMTPD/OpenSMTPD.git OpenSMTPD
 
-Add a cron job to run create-opensmtpd-deb.sh as your desired interval, here 15
+Add a cron job to run create-opensmtpd-deb.sh at your desired interval, here 15
 minutes is used.  Note that this can be done as a normal user.
 
     */15 * * * * /usr/local/bin/create-opensmtpd-deb.sh
